@@ -20,7 +20,7 @@ On the slaves you will need:
 
 Now that we covered what is needed, let's move on to cloning the code to the server that will act `master`
 
-> The following steps expects that you have already installed the above **required** packages
+?> The following steps expects that you have already installed the above **required** packages
 
 ```bash
 git clone https://github.com/drftpd-ng/drftpd.git
