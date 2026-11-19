@@ -1,25 +1,696 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>DrFTPD</title>
-  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
-  <meta name="description" content="Description">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
-  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/docsify@4/lib/themes/vue.css">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DrFTPD — Distributed FTP daemon</title>
+<meta name="description" content="DrFTPD is an open-source distributed FTP server: one master, as many transfer slaves as you like. Works with your existing FTP client, FXP included.">
+<meta property="og:title" content="DrFTPD — Distributed FTP daemon">
+<meta property="og:description" content="One FTP site. As many disks as you have servers.">
+<meta name="theme-color" content="#06080c">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%2306080c'/%3E%3Ccircle cx='16' cy='9' r='4' fill='%2338f2a4'/%3E%3Ccircle cx='8' cy='23' r='3' fill='%2359c8ff'/%3E%3Ccircle cx='16' cy='24' r='3' fill='%2359c8ff'/%3E%3Ccircle cx='24' cy='23' r='3' fill='%2359c8ff'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#06080c; --bg2:#0b0f16; --panel:#0e131c; --line:#1b2433; --line2:#263247;
+  --text:#e6edf6; --muted:#8b98ab; --dim:#5d6a7e;
+  --green:#38f2a4; --cyan:#59c8ff; --violet:#9b8cff; --amber:#ffc65c; --red:#ff6b7d;
+  --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --sans:"Space Grotesk",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+  --radius:14px; --max:1180px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);line-height:1.6;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+code,pre,.mono{font-family:var(--mono)}
+::selection{background:var(--green);color:#03140c}
+.wrap{max-width:var(--max);margin:0 auto;padding:0 24px}
+
+/* background grid + glow */
+.bg-grid{position:fixed;inset:0;z-index:-2;pointer-events:none;
+  background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);
+  background-size:56px 56px;opacity:.28;
+  mask-image:radial-gradient(ellipse 80% 60% at 50% 0%,#000 30%,transparent 75%);
+  -webkit-mask-image:radial-gradient(ellipse 80% 60% at 50% 0%,#000 30%,transparent 75%)}
+.bg-glow{position:absolute;z-index:-1;pointer-events:none;width:900px;height:900px;border-radius:50%;filter:blur(120px);opacity:.18}
+
+/* nav */
+nav{position:sticky;top:0;z-index:50;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);background:rgba(6,8,12,.72);border-bottom:1px solid transparent;transition:border-color .3s}
+nav.scrolled{border-bottom-color:var(--line)}
+.nav-in{display:flex;align-items:center;justify-content:space-between;height:66px;gap:16px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:19px;letter-spacing:-.01em}
+.brand svg{width:30px;height:30px}
+.brand span b{color:var(--green);font-weight:700}
+.nav-links{display:flex;gap:28px;font-size:14.5px;color:var(--muted)}
+.nav-links a:hover{color:var(--text)}
+.btn{display:inline-flex;align-items:center;gap:9px;padding:11px 20px;border-radius:10px;font-weight:600;font-size:15px;border:1px solid var(--line2);transition:transform .15s,border-color .2s,background .2s,box-shadow .2s;white-space:nowrap}
+.btn:hover{transform:translateY(-1px);border-color:var(--dim)}
+.btn svg{width:18px;height:18px}
+.btn-primary{background:var(--green);color:#03140c;border-color:var(--green);box-shadow:0 0 0 0 rgba(56,242,164,.0),0 8px 30px -8px rgba(56,242,164,.55)}
+.btn-primary:hover{border-color:var(--green);box-shadow:0 0 0 4px rgba(56,242,164,.15),0 10px 40px -8px rgba(56,242,164,.7)}
+.btn-sm{padding:8px 14px;font-size:14px}
+.menu-btn{display:none;background:none;border:1px solid var(--line2);color:var(--text);border-radius:9px;width:40px;height:40px;cursor:pointer}
+
+/* hero */
+.hero{position:relative;padding:84px 0 70px;overflow-x:clip}
+html{overflow-x:hidden}
+.hero-grid{display:grid;grid-template-columns:1.02fr 1fr;gap:48px;align-items:center}
+.pill{display:inline-flex;align-items:center;gap:10px;font-family:var(--mono);font-size:12.5px;color:var(--muted);border:1px solid var(--line2);background:rgba(14,19,28,.7);padding:6px 12px 6px 8px;border-radius:999px}
+.pill .dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 12px var(--green);animation:pulse 2s infinite}
+.pill b{color:var(--text);font-weight:500}
+@keyframes pulse{50%{opacity:.35}}
+h1{font-size:clamp(40px,6.2vw,74px);line-height:1.02;letter-spacing:-.035em;font-weight:700;margin:22px 0 22px}
+h1 .grad{background:linear-gradient(100deg,var(--green) 0%,var(--cyan) 55%,var(--violet) 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
+.lead{font-size:clamp(17px,1.6vw,19.5px);color:var(--muted);max-width:560px}
+.lead b{color:var(--text);font-weight:500}
+.cta{display:flex;flex-wrap:wrap;gap:12px;margin-top:34px}
+.hero-meta{display:flex;flex-wrap:wrap;gap:22px;margin-top:34px;font-family:var(--mono);font-size:13px;color:var(--dim)}
+.hero-meta span{display:flex;align-items:center;gap:8px}
+.hero-meta i{width:6px;height:6px;border-radius:2px;background:var(--cyan);display:inline-block}
+
+/* topology */
+.topo{position:relative;border:1px solid var(--line);border-radius:20px;background:linear-gradient(180deg,rgba(14,19,28,.9),rgba(9,12,18,.9));padding:14px;box-shadow:0 40px 120px -40px rgba(89,200,255,.25),inset 0 1px 0 rgba(255,255,255,.03)}
+.topo-head{display:flex;justify-content:space-between;align-items:center;font-family:var(--mono);font-size:11.5px;color:var(--dim);padding:2px 6px 10px}
+.legend{display:flex;gap:14px}
+.legend span{display:flex;align-items:center;gap:6px}
+.legend i{width:14px;height:2px;display:inline-block}
+.topo svg{width:100%;height:auto;display:block}
+.node-label{font-family:var(--mono);font-size:11px;fill:var(--muted)}
+.node-title{font-family:var(--sans);font-size:13px;font-weight:600;fill:var(--text)}
+
+/* terminal */
+.term{margin-top:14px;border:1px solid var(--line);border-radius:12px;background:#05070b;overflow:hidden}
+.term-bar{display:flex;align-items:center;gap:7px;padding:9px 12px;border-bottom:1px solid var(--line);font-family:var(--mono);font-size:11.5px;color:var(--dim)}
+.term-bar i{width:10px;height:10px;border-radius:50%;background:#1f2836;display:inline-block}
+.term-bar em{margin-left:8px;font-style:normal}
+.term pre{padding:14px 16px;font-size:12.5px;line-height:1.75;min-height:198px;white-space:pre-wrap;word-break:break-word;color:var(--muted)}
+.t-in{color:var(--cyan)} .t-ok{color:var(--green)} .t-dim{color:var(--dim)} .t-amb{color:var(--amber)}
+.caret{display:inline-block;width:8px;height:15px;background:var(--green);vertical-align:-2px;animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+
+/* stats strip */
+.strip{border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:rgba(11,15,22,.6)}
+.strip-in{display:grid;grid-template-columns:repeat(4,1fr)}
+.stat{padding:30px 24px;border-left:1px solid var(--line)}
+.stat:first-child{border-left:0}
+.stat b{display:block;font-size:34px;letter-spacing:-.03em;font-weight:700}
+.stat span{color:var(--muted);font-size:14px}
+.stat b em{font-style:normal;color:var(--green)}
+
+/* sections */
+section{padding:110px 0;position:relative}
+.eyebrow{font-family:var(--mono);font-size:12.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--green);display:flex;align-items:center;gap:10px}
+.eyebrow::before{content:"";width:22px;height:1px;background:var(--green)}
+h2{font-size:clamp(30px,4.2vw,48px);line-height:1.08;letter-spacing:-.03em;margin:16px 0 18px;font-weight:700;max-width:780px}
+.sub{color:var(--muted);font-size:18px;max-width:680px}
+
+/* how it works */
+.how{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:56px}
+.step{position:relative;border:1px solid var(--line);border-radius:var(--radius);background:var(--panel);padding:28px 26px 26px;overflow:hidden}
+.step .n{font-family:var(--mono);font-size:12px;color:var(--dim)}
+.step h3{font-size:21px;margin:12px 0 10px;letter-spacing:-.01em}
+.step p{color:var(--muted);font-size:15.5px}
+.step .ic{width:42px;height:42px;border-radius:11px;display:grid;place-items:center;margin-bottom:6px;border:1px solid var(--line2)}
+.step .ic svg{width:22px;height:22px}
+.callout{margin-top:22px;display:grid;grid-template-columns:auto 1fr;gap:20px;align-items:center;border:1px dashed var(--line2);border-radius:var(--radius);padding:22px 26px;background:rgba(89,200,255,.03)}
+.callout .big{font-family:var(--mono);font-size:22px;color:var(--cyan);white-space:nowrap}
+.callout p{color:var(--muted);font-size:15.5px}
+.callout p b{color:var(--text);font-weight:500}
+
+/* features */
+.feat{display:grid;grid-template-columns:repeat(12,1fr);gap:18px;margin-top:56px}
+.card{grid-column:span 4;position:relative;border:1px solid var(--line);border-radius:var(--radius);background:var(--panel);padding:26px;transition:border-color .25s,transform .25s;overflow:hidden}
+.card::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:radial-gradient(400px circle at var(--mx,50%) var(--my,0%),rgba(56,242,164,.08),transparent 45%);opacity:0;transition:opacity .3s}
+.card:hover{border-color:var(--line2);transform:translateY(-2px)}
+.card:hover::after{opacity:1}
+.card.wide{grid-column:span 8}
+.card h3{font-size:19px;margin:16px 0 8px;letter-spacing:-.01em}
+.card p{color:var(--muted);font-size:15px}
+.card .tag{font-family:var(--mono);font-size:11.5px;color:var(--dim);border:1px solid var(--line2);padding:3px 8px;border-radius:6px;display:inline-block;margin:14px 6px 0 0}
+.icon{width:40px;height:40px;border-radius:10px;display:grid;place-items:center;background:rgba(56,242,164,.08);border:1px solid rgba(56,242,164,.22);color:var(--green)}
+.icon.c{background:rgba(89,200,255,.08);border-color:rgba(89,200,255,.22);color:var(--cyan)}
+.icon.v{background:rgba(155,140,255,.08);border-color:rgba(155,140,255,.22);color:var(--violet)}
+.icon.a{background:rgba(255,198,92,.08);border-color:rgba(255,198,92,.22);color:var(--amber)}
+.icon svg{width:21px;height:21px}
+.mini-race{margin-top:18px;font-family:var(--mono);font-size:12.5px;border:1px solid var(--line);border-radius:10px;padding:12px 14px;background:#070a0f}
+.bar{height:6px;border-radius:4px;background:var(--line);margin:6px 0 10px;overflow:hidden}
+.bar i{display:block;height:100%;border-radius:4px;background:linear-gradient(90deg,var(--green),var(--cyan));width:0;transition:width 1.6s cubic-bezier(.2,.8,.2,1)}
+.race-row{display:flex;justify-content:space-between;color:var(--muted)}
+.race-row b{color:var(--text);font-weight:500}
+
+/* plugins */
+.plugins{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px;margin-top:50px}
+.plug{border:1px solid var(--line);border-radius:12px;padding:16px 16px 14px;background:rgba(14,19,28,.6);transition:border-color .2s,background .2s}
+.plug:hover{border-color:var(--green);background:rgba(56,242,164,.04)}
+.plug code{font-size:13.5px;color:var(--text);font-weight:500}
+.plug code::before{content:"▸ ";color:var(--green)}
+.plug p{color:var(--dim);font-size:13.5px;margin-top:6px;line-height:1.45}
+
+/* quickstart */
+.qs{display:grid;grid-template-columns:.85fr 1.15fr;gap:48px;align-items:start;margin-top:10px}
+.req{margin-top:30px;display:grid;gap:12px}
+.req div{display:flex;gap:14px;align-items:flex-start;border:1px solid var(--line);border-radius:12px;padding:14px 16px;background:var(--panel)}
+.req b{font-family:var(--mono);font-size:12px;color:var(--green);min-width:58px;padding-top:2px}
+.req span{color:var(--muted);font-size:15px}
+.req span code{color:var(--text);font-size:13.5px}
+.code{border:1px solid var(--line);border-radius:16px;background:#05070b;overflow:hidden;box-shadow:0 30px 90px -40px rgba(56,242,164,.25)}
+.tabs{display:flex;border-bottom:1px solid var(--line);overflow-x:auto}
+.tab{background:none;border:0;color:var(--dim);font-family:var(--mono);font-size:13px;padding:14px 20px;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap}
+.tab[aria-selected="true"]{color:var(--text);border-bottom-color:var(--green)}
+.tab:hover{color:var(--text)}
+.copy{margin-left:auto;background:none;border:0;color:var(--dim);font-family:var(--mono);font-size:12px;padding:0 18px;cursor:pointer;white-space:nowrap}
+.copy:hover{color:var(--green)}
+.panel{display:none}
+.panel.on{display:block}
+.panel pre{padding:22px 24px;font-size:13.5px;line-height:1.85;overflow-x:auto;color:var(--text)}
+.panel pre .c{color:var(--dim)}
+.panel pre .p{color:var(--green);user-select:none}
+.note{font-family:var(--mono);font-size:12.5px;color:var(--dim);padding:0 24px 20px}
+.note b{color:var(--amber);font-weight:500}
+
+/* roadmap */
+.road{margin-top:56px;display:grid;grid-template-columns:repeat(4,1fr);gap:0;position:relative}
+.road::before{content:"";position:absolute;left:0;right:0;top:15px;height:2px;background:linear-gradient(90deg,var(--green),var(--cyan) 40%,var(--line2) 70%)}
+.ms{padding-right:22px;position:relative}
+.ms .knob{width:32px;height:32px;border-radius:50%;background:var(--bg);border:2px solid var(--line2);display:grid;place-items:center;position:relative;z-index:1}
+.ms .knob i{width:10px;height:10px;border-radius:50%;background:var(--line2)}
+.ms.done .knob{border-color:var(--green)} .ms.done .knob i{background:var(--green);box-shadow:0 0 14px var(--green)}
+.ms.now .knob{border-color:var(--cyan)} .ms.now .knob i{background:var(--cyan);animation:pulse 1.6s infinite}
+.ms .when{font-family:var(--mono);font-size:12px;color:var(--dim);margin-top:18px}
+.ms h3{font-size:18px;margin:6px 0 8px}
+.ms ul{list-style:none;color:var(--muted);font-size:14.5px}
+.ms li{padding-left:16px;position:relative;margin-bottom:5px}
+.ms li::before{content:"–";position:absolute;left:0;color:var(--dim)}
+.draft{display:inline-block;font-family:var(--mono);font-size:11.5px;color:var(--amber);border:1px solid rgba(255,198,92,.35);border-radius:6px;padding:3px 9px;margin-left:12px;vertical-align:middle;letter-spacing:.02em;text-transform:none}
+
+/* community */
+.cta-box{position:relative;overflow:hidden;border:1px solid var(--line2);border-radius:24px;padding:64px 56px;background:radial-gradient(700px 300px at 15% 0%,rgba(56,242,164,.14),transparent 60%),radial-gradient(600px 300px at 100% 100%,rgba(155,140,255,.14),transparent 60%),var(--panel);display:grid;grid-template-columns:1.3fr 1fr;gap:40px;align-items:center}
+.cta-box h2{margin-top:10px}
+.links{display:grid;gap:12px}
+.lk{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px 18px;border:1px solid var(--line2);border-radius:12px;background:rgba(6,8,12,.55);transition:border-color .2s,transform .2s}
+.lk:hover{border-color:var(--green);transform:translateX(3px)}
+.lk b{font-weight:600}
+.lk span{display:block;color:var(--dim);font-size:13.5px}
+.lk svg{width:18px;height:18px;color:var(--green);flex-shrink:0}
+
+footer{border-top:1px solid var(--line);padding:40px 0 50px;color:var(--dim);font-size:14px}
+.foot{display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap}
+.foot a:hover{color:var(--text)}
+.foot nav{position:static;background:none;backdrop-filter:none;border:0;display:flex;gap:22px}
+
+/* reveal */
+.rv{opacity:0;transform:translateY(22px);transition:opacity .8s cubic-bezier(.2,.8,.2,1),transform .8s cubic-bezier(.2,.8,.2,1)}
+.rv.in{opacity:1;transform:none}
+
+@media (max-width:980px){
+  .hero-grid,.qs,.cta-box{grid-template-columns:1fr}
+  .how{grid-template-columns:1fr}
+  .card,.card.wide{grid-column:span 12}
+  .road{grid-template-columns:1fr 1fr;row-gap:40px}
+  .road::before{display:none}
+  .strip-in{grid-template-columns:1fr 1fr}
+  .stat:nth-child(3){border-left:0}
+  .stat:nth-child(n+3){border-top:1px solid var(--line)}
+}
+@media (max-width:760px){
+  .wrap{padding:0 16px}
+  .nav-links{display:none;position:absolute;top:66px;left:0;right:0;flex-direction:column;gap:0;background:rgba(6,8,12,.97);border-bottom:1px solid var(--line);padding:6px 16px 14px}
+  .nav-links.open{display:flex}
+  .nav-links a{padding:12px 0;border-bottom:1px solid var(--line)}
+  .menu-btn{display:grid;place-items:center}
+  .nav-gh,.pill-x{display:none}
+  .hero{padding:52px 0 50px}
+  section{padding:76px 0}
+  .road{grid-template-columns:1fr}
+  .cta-box{padding:38px 22px}
+  .callout{grid-template-columns:1fr;gap:8px}
+  .stat{padding:22px 16px}
+  .stat b{font-size:27px}
+  .legend{display:none}
+  .panel pre{padding:18px 16px;font-size:12.5px}
+  .note{padding:0 16px 18px}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+  .rv{opacity:1;transform:none}
+}
+</style>
 </head>
 <body>
-  <div id="app"></div>
-  <script>
-    window.$docsify = {
-      name: 'DrFTPD',
-      repo: 'https://github.com/drftpd-ng/drftpd-ng.github.io/blob/master/docs',
-      coverpage: true,
-      loadSidebar: true,
-      subMaxLevel: 2
-    }
-  </script>
-  <!-- Docsify v4 -->
-  <script src="//cdn.jsdelivr.net/npm/docsify@4"></script>
+<div class="bg-grid" aria-hidden="true"></div>
+
+<nav id="nav">
+  <div class="wrap nav-in">
+    <a href="#top" class="brand" aria-label="DrFTPD home">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="#0e131c" stroke="#263247"/><path d="M16 9 8 23M16 9v15M16 9l8 14" stroke="#263247" stroke-width="1.5"/><circle cx="16" cy="9" r="4" fill="#38f2a4"/><circle cx="8" cy="23" r="3" fill="#59c8ff"/><circle cx="16" cy="24" r="3" fill="#59c8ff"/><circle cx="24" cy="23" r="3" fill="#59c8ff"/></svg>
+      <span>Dr<b>FTPD</b></span>
+    </a>
+    <div class="nav-links" id="links">
+      <a href="#how">How it works</a>
+      <a href="#features">Features</a>
+      <a href="#plugins">Plugins</a>
+      <a href="#start">Quick start</a>
+      <a href="#roadmap">Roadmap</a>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center">
+      <a class="btn btn-sm nav-gh" href="https://github.com/drftpd-ng/drftpd" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.52-1.33-1.28-1.69-1.28-1.69-1.05-.71.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.71 1.26 3.37.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.68 0-1.26.45-2.28 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.83 1.19 3.09 0 4.41-2.69 5.38-5.25 5.67.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5Z"/></svg>
+        GitHub
+      </a>
+      <button class="menu-btn" id="menu" aria-label="Open menu" aria-expanded="false">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<header class="hero" id="top">
+  <div class="bg-glow" style="background:var(--green);top:-420px;left:-300px"></div>
+  <div class="bg-glow" style="background:var(--violet);top:-300px;right:-420px"></div>
+  <div class="wrap hero-grid">
+    <div>
+      <a class="pill" href="https://github.com/drftpd-ng/drftpd/releases" target="_blank" rel="noopener"><span class="dot"></span><b>4.0.11</b> stable<span class="pill-x"> · 4.0.12 in development</span> →</a>
+      <h1>One FTP site.<br><span class="grad">Every server you own.</span></h1>
+      <p class="lead">DrFTPD is a <b>distributed FTP daemon</b>. A single master speaks FTP and keeps the filesystem; any number of transfer slaves store the files and move the bytes. Your users see one site, with the bandwidth and disks of all of them.</p>
+      <div class="cta">
+        <a class="btn btn-primary" href="#start">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="m5 12 5 5L20 7"/></svg>
+          Get started
+        </a>
+        <a class="btn" href="https://github.com/drftpd-ng/drftpd" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m16 18 6-6-6-6M8 6l-6 6 6 6"/></svg>
+          Browse the source
+        </a>
+      </div>
+      <div class="hero-meta">
+        <span><i></i>GPL-2.0</span>
+        <span><i></i>Java 17+</span>
+        <span><i></i>Linux · Windows</span>
+        <span><i></i>No root needed</span>
+      </div>
+    </div>
+
+    <div class="rv">
+      <div class="topo" aria-label="Diagram: an FTP client talks to the master over the control connection while file data flows directly to and from the slaves">
+        <div class="topo-head">
+          <span>live topology</span>
+          <div class="legend">
+            <span><i style="background:var(--cyan)"></i>control</span>
+            <span><i style="background:var(--green)"></i>data</span>
+          </div>
+        </div>
+        <svg viewBox="0 0 520 300" role="img" aria-hidden="true">
+          <defs>
+            <radialGradient id="gm" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#38f2a4" stop-opacity=".35"/><stop offset="1" stop-color="#38f2a4" stop-opacity="0"/></radialGradient>
+            <filter id="glow"><feGaussianBlur stdDeviation="2.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+          </defs>
+          <!-- control: client -> master -->
+          <path id="c0" d="M78 150 C150 150 170 64 252 64" fill="none" stroke="#59c8ff" stroke-opacity=".55" stroke-width="1.5" stroke-dasharray="4 5"/>
+          <!-- master -> slaves (control) -->
+          <g stroke="#263247" stroke-width="1.2" fill="none">
+            <path d="M268 72 C340 72 360 44 432 44"/>
+            <path d="M268 72 C340 72 360 112 432 112"/>
+            <path d="M268 72 C340 72 360 180 432 180"/>
+            <path d="M268 72 C340 72 360 248 432 248"/>
+          </g>
+          <!-- data: client <-> slaves directly -->
+          <g fill="none" stroke="#38f2a4" stroke-opacity=".22" stroke-width="1.5">
+            <path id="d1" d="M78 160 C200 190 300 44 432 44"/>
+            <path id="d2" d="M78 160 C220 200 300 112 432 112"/>
+            <path id="d3" d="M78 160 C220 200 300 180 432 180"/>
+            <path id="d4" d="M78 160 C200 230 300 248 432 248"/>
+          </g>
+          <!-- packets -->
+          <g filter="url(#glow)">
+            <circle r="3" fill="#59c8ff"><animateMotion dur="2.6s" repeatCount="indefinite"><mpath href="#c0"/></animateMotion></circle>
+            <circle r="3.2" fill="#38f2a4"><animateMotion dur="1.9s" repeatCount="indefinite"><mpath href="#d1"/></animateMotion></circle>
+            <circle r="3.2" fill="#38f2a4"><animateMotion dur="1.9s" begin=".95s" repeatCount="indefinite"><mpath href="#d1"/></animateMotion></circle>
+            <circle r="3.2" fill="#38f2a4"><animateMotion dur="2.2s" begin=".4s" repeatCount="indefinite"><mpath href="#d2"/></animateMotion></circle>
+            <circle r="3.2" fill="#38f2a4"><animateMotion dur="2.2s" begin="1.5s" repeatCount="indefinite"><mpath href="#d2"/></animateMotion></circle>
+            <circle r="3.2" fill="#38f2a4"><animateMotion dur="1.7s" begin=".2s" repeatCount="indefinite"><mpath href="#d3"/></animateMotion></circle>
+            <circle r="3.2" fill="#38f2a4"><animateMotion dur="2.4s" begin=".7s" repeatCount="indefinite"><mpath href="#d4"/></animateMotion></circle>
+            <circle r="3.2" fill="#38f2a4"><animateMotion dur="2.4s" begin="1.9s" repeatCount="indefinite"><mpath href="#d4"/></animateMotion></circle>
+          </g>
+          <!-- client -->
+          <g>
+            <rect x="18" y="128" width="62" height="54" rx="10" fill="#0e131c" stroke="#263247"/>
+            <rect x="30" y="140" width="38" height="24" rx="3" fill="none" stroke="#8b98ab" stroke-width="1.5"/>
+            <path d="M40 171h18" stroke="#8b98ab" stroke-width="1.5"/>
+            <text x="49" y="202" text-anchor="middle" class="node-title">client</text>
+            <text x="49" y="217" text-anchor="middle" class="node-label">any FTP app</text>
+          </g>
+          <!-- master -->
+          <circle cx="260" cy="66" r="46" fill="url(#gm)"/>
+          <g>
+            <rect x="228" y="40" width="64" height="52" rx="12" fill="#0e131c" stroke="#38f2a4" stroke-opacity=".8"/>
+            <circle cx="260" cy="66" r="9" fill="none" stroke="#38f2a4" stroke-width="2"/>
+            <circle cx="260" cy="66" r="3" fill="#38f2a4"/>
+            <text x="260" y="112" text-anchor="middle" class="node-title">master</text>
+            <text x="260" y="127" text-anchor="middle" class="node-label">FTP · users · VFS</text>
+          </g>
+          <!-- slaves -->
+          <g font-family="JetBrains Mono, monospace">
+            <g transform="translate(432 26)"><rect width="70" height="36" rx="8" fill="#0e131c" stroke="#263247"/><rect x="10" y="11" width="22" height="4" rx="2" fill="#59c8ff"/><rect x="10" y="20" width="16" height="4" rx="2" fill="#263247"/><text x="58" y="23" text-anchor="end" class="node-label">s1</text></g>
+            <g transform="translate(432 94)"><rect width="70" height="36" rx="8" fill="#0e131c" stroke="#263247"/><rect x="10" y="11" width="30" height="4" rx="2" fill="#59c8ff"/><rect x="10" y="20" width="12" height="4" rx="2" fill="#263247"/><text x="58" y="23" text-anchor="end" class="node-label">s2</text></g>
+            <g transform="translate(432 162)"><rect width="70" height="36" rx="8" fill="#0e131c" stroke="#263247"/><rect x="10" y="11" width="18" height="4" rx="2" fill="#59c8ff"/><rect x="10" y="20" width="24" height="4" rx="2" fill="#263247"/><text x="58" y="23" text-anchor="end" class="node-label">s3</text></g>
+            <g transform="translate(432 230)"><rect width="70" height="36" rx="8" fill="#0e131c" stroke="#263247"/><rect x="10" y="11" width="26" height="4" rx="2" fill="#59c8ff"/><rect x="10" y="20" width="20" height="4" rx="2" fill="#263247"/><text x="58" y="23" text-anchor="end" class="node-label">sN</text></g>
+            <text x="467" y="290" text-anchor="middle" class="node-label">transfer slaves</text>
+          </g>
+        </svg>
+        <div class="term">
+          <div class="term-bar"><i></i><i></i><i></i><em>ftp session — illustrative</em></div>
+          <pre id="term" aria-live="off"></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="strip">
+  <div class="wrap strip-in">
+    <div class="stat"><b><em>N</em> slaves</b><span>Add storage and bandwidth by adding servers</span></div>
+    <div class="stat"><b>1 site</b><span>One virtual filesystem for your users</span></div>
+    <div class="stat"><b>FXP</b><span>Site-to-site with regular FTP servers</span></div>
+    <div class="stat"><b>0 root</b><span>Neither master nor slaves need it</span></div>
+  </div>
+</div>
+
+<section id="how">
+  <div class="wrap">
+    <div class="eyebrow rv">How it works</div>
+    <h2 class="rv">The master thinks. The slaves move the bytes.</h2>
+    <p class="sub rv">Most FTP servers store files on the machine they run on. DrFTPD splits that job in two, so one site can span many servers while users keep the FTP client they already know.</p>
+
+    <div class="how">
+      <div class="step rv">
+        <div class="ic" style="color:var(--cyan)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg></div>
+        <div class="n">01 / client</div>
+        <h3>Users connect as usual</h3>
+        <p>Any FTP client works, FXP included. Passive mode needs <code>PRET</code>, which the major clients already support.</p>
+      </div>
+      <div class="step rv">
+        <div class="ic" style="color:var(--green)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="8"/><path d="M12 1v3M12 20v3M1 12h3M20 12h3"/></svg></div>
+        <div class="n">02 / master</div>
+        <h3>The master holds the map</h3>
+        <p>It handles the FTP control connection, users, permissions and the virtual filesystem: which file lives on which slave, plus its size, owner and dates.</p>
+      </div>
+      <div class="step rv">
+        <div class="ic" style="color:var(--violet)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="6" rx="1.5"/><rect x="3" y="15" width="18" height="6" rx="1.5"/><path d="M7 6h.01M7 18h.01"/></svg></div>
+        <div class="n">03 / slaves</div>
+        <h3>Slaves store and transfer</h3>
+        <p>Slaves are kept thin: they know nothing about users or the FTP protocol. They report their files on startup and run the master's instructions.</p>
+      </div>
+    </div>
+
+    <div class="callout rv">
+      <div class="big">10 × 1 Gbit</div>
+      <p>Merge ten 1&nbsp;Gbit servers and you get <b>10&nbsp;Gbit of aggregate bandwidth</b>; a single transfer still tops out at the speed of the slave serving it. A file can live on several slaves for redundancy and extra throughput.</p>
+    </div>
+  </div>
+</section>
+
+<section id="features" style="padding-top:40px">
+  <div class="wrap">
+    <div class="eyebrow rv">Features</div>
+    <h2 class="rv">Built for scene-style sites, from the start.</h2>
+    <p class="sub rv">Race stats, SFV checking, nukes, an IRC bot, requests, trials. Most of it ships in the box as plugins you turn on in configuration.</p>
+
+    <div class="feat">
+      <div class="card wide rv">
+        <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8Z"/></svg></div>
+        <h3>Zipscript and race stats</h3>
+        <p>SFV and CRC checking on upload, ZIP integrity checks, incomplete markers, and race leaders announced as files land on the slaves.</p>
+        <div class="mini-race" id="race">
+          <div class="race-row"><span>Some.Release-GRP</span><span><b id="race-pct">0</b>% · 42F</span></div>
+          <div class="bar"><i id="race-bar"></i></div>
+          <div class="race-row"><span>#1 <b>alice</b>/hd</span><span>18F · 112 MB/s</span></div>
+          <div class="race-row"><span>#2 <b>bob</b>/hd</span><span>14F · 97 MB/s</span></div>
+          <div class="race-row"><span>#3 <b>carol</b>/ftw</span><span>10F · 64 MB/s</span></div>
+        </div>
+      </div>
+      <div class="card rv">
+        <div class="icon c"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+        <h3>IRC sitebot</h3>
+        <p>A built-in bot announces races, new releases and nukes, and answers commands on IRC. FiSH (Blowfish) encryption is supported.</p>
+        <span class="tag">sitebot</span><span class="tag">blowfish</span>
+      </div>
+      <div class="card rv">
+        <div class="icon v"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+        <h3>TLS everywhere</h3>
+        <p>TLS on FTP control and data connections, and SSL between the master and its slaves using a key generated with <code>genkey</code>.</p>
+      </div>
+      <div class="card rv">
+        <div class="icon a"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M4 7h16M4 12h16M4 17h10"/></svg></div>
+        <h3>Redundancy and jobs</h3>
+        <p>Keep copies on several slaves, mirror sections, archive old releases and move files between slaves with background jobs.</p>
+      </div>
+      <div class="card rv">
+        <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M12 2v6M12 16v6M2 12h6M16 12h6"/><circle cx="12" cy="12" r="3"/></svg></div>
+        <h3>Site operations</h3>
+        <p>Nukes and autonuke, dupe checking, requests, trials, traffic statistics, auto free space, and <code>SITE</code> commands for day-to-day admin.</p>
+      </div>
+      <div class="card rv">
+        <div class="icon c"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></div>
+        <h3>Pluggable by design</h3>
+        <p>Features are Maven modules split into master and slave sides. Write your own, or switch off the ones you don't use.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="plugins" style="padding-top:40px">
+  <div class="wrap">
+    <div class="eyebrow rv">Plugins</div>
+    <h2 class="rv">22 plugins in the tree.</h2>
+    <p class="sub rv">Everything under <code style="color:var(--text)">src/plugins</code>, ready to build with the core.</p>
+    <div class="plugins" id="plugin-grid"></div>
+  </div>
+</section>
+
+<section id="start" style="padding-top:40px">
+  <div class="wrap qs">
+    <div>
+      <div class="eyebrow rv">Quick start</div>
+      <h2 class="rv">Up and racing in minutes.</h2>
+      <p class="sub rv">Build from source with Maven, start the master, then point slaves at it. Full configuration lives in the <code style="color:var(--text)">.dist</code> files.</p>
+      <div class="req rv">
+        <div><b>master</b><span>JDK 17, Apache Maven, Git</span></div>
+        <div><b>slave</b><span>Java 17 runtime, plus <code>mediainfo</code> CLI for media checks</span></div>
+        <div><b>client</b><span>Any FTP client; <code>PRET</code> support for passive mode</span></div>
+      </div>
+    </div>
+    <div class="code rv">
+      <div class="tabs" role="tablist">
+        <button class="tab" role="tab" aria-selected="true" data-t="build">1 · build</button>
+        <button class="tab" role="tab" aria-selected="false" data-t="master">2 · master</button>
+        <button class="tab" role="tab" aria-selected="false" data-t="slave">3 · slave</button>
+        <button class="copy" id="copy">copy</button>
+      </div>
+      <div class="panel on" id="p-build"><pre><span class="p">$ </span>git clone https://github.com/drftpd-ng/drftpd.git
+<span class="p">$ </span>cd drftpd
+<span class="p">$ </span>git checkout tags/4.0.11
+<span class="p">$ </span>mvn validate
+<span class="p">$ </span>mvn install
+<span class="c"># the runtime/ directory now holds master and slave</span></pre></div>
+      <div class="panel" id="p-master"><pre><span class="c"># copy the .dist files you change to .conf (at least master.conf)</span>
+<span class="p">$ </span>./genkey.sh            <span class="c"># optional: SSL between master and slaves</span>
+<span class="p">$ </span>./master.sh
+<span class="c"># connect to 127.0.0.1:2121 as drftpd / drftpd, then:</span>
+<span class="p">ftp&gt; </span>SITE ADDSLAVE SLAVENAME
+<span class="p">ftp&gt; </span>SITE SLAVE SLAVENAME ADDMASK *@IP.MASK</pre></div>
+      <div class="panel" id="p-slave"><pre><span class="c"># copy slave.conf.dist to slave.conf and set the master address</span>
+<span class="c"># optional: copy drftpd.key from the master into config/</span>
+<span class="p">$ </span>./slave.sh
+<span class="c"># the slave sends its file list and joins the site</span></pre></div>
+      <div class="note"><b>!</b> Change the default <code>drftpd</code> login before exposing the server. On Windows use the <code>.bat</code> scripts.</div>
+    </div>
+  </div>
+</section>
+
+<section id="roadmap" style="padding-top:40px">
+  <div class="wrap">
+    <div class="eyebrow rv">Roadmap <span class="draft">draft · under discussion</span></div>
+    <h2 class="rv">DrFTPD is waking up.</h2>
+    <p class="sub rv">The maintainers are reviewing the backlog and planning what comes next. This plan is a working draft and will change.</p>
+    <div class="road">
+      <div class="ms done rv"><div class="knob"><i></i></div><div class="when">2025 — 2026</div><h3>Housekeeping</h3><ul><li>Dependency updates</li><li>mkvalidator replaced by mediainfo</li><li>Bug fixes on master</li></ul></div>
+      <div class="ms now rv"><div class="knob"><i></i></div><div class="when">now</div><h3>Review and stabilize</h3><ul><li>Review open pull requests</li><li>Fix long-standing bugs</li><li>New website and docs</li></ul></div>
+      <div class="ms rv"><div class="knob"><i></i></div><div class="when">next</div><h3>Modernize</h3><ul><li>Current Java LTS</li><li>Retire legacy dependencies</li><li>Easier install and Docker</li></ul></div>
+      <div class="ms rv"><div class="knob"><i></i></div><div class="when">later</div><h3>The long game</h3><ul><li>Decide the platform for the next decade</li><li>Grow the contributor base</li></ul></div>
+    </div>
+  </div>
+</section>
+
+<section style="padding-top:40px">
+  <div class="wrap">
+    <div class="cta-box rv">
+      <div>
+        <div class="eyebrow">Community</div>
+        <h2>Run it. Break it. Send a patch.</h2>
+        <p class="sub">DrFTPD is free software under the GPL-2.0. Bug reports, deployment feedback and focused pull requests all help keep it alive.</p>
+      </div>
+      <div class="links">
+        <a class="lk" href="https://github.com/drftpd-ng/drftpd/issues" target="_blank" rel="noopener"><div><b>Report an issue</b><span>Bugs, questions, feature ideas</span></div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+        <a class="lk" href="https://github.com/drftpd-ng/drftpd/pulls" target="_blank" rel="noopener"><div><b>Pull requests</b><span>Review or contribute code</span></div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+        <a class="lk" href="https://github.com/drftpd-ng/drftpd/releases" target="_blank" rel="noopener"><div><b>Releases</b><span>Changelogs and source archives</span></div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap foot">
+    <span>DrFTPD · distributed FTP daemon · GPL-2.0</span>
+    <nav>
+      <a href="https://github.com/drftpd-ng/drftpd" target="_blank" rel="noopener">GitHub</a>
+      <a href="https://github.com/drftpd-ng/drftpd/wiki" target="_blank" rel="noopener">Wiki</a>
+      <a href="#top">Back to top ↑</a>
+    </nav>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // nav
+  var nav = document.getElementById('nav');
+  addEventListener('scroll', function(){ nav.classList.toggle('scrolled', scrollY > 10); }, {passive:true});
+  var menu = document.getElementById('menu'), links = document.getElementById('links');
+  menu.addEventListener('click', function(){
+    var o = links.classList.toggle('open'); menu.setAttribute('aria-expanded', o);
+  });
+  links.addEventListener('click', function(e){ if(e.target.tagName==='A'){ links.classList.remove('open'); menu.setAttribute('aria-expanded', false);} });
+
+  // plugins
+  var P = [
+    ['archive','Move finished releases to archive sections and slaves'],
+    ['autofreespace','Delete the oldest releases when disks fill up'],
+    ['autonuke','Nuke incomplete or rule-breaking releases automatically'],
+    ['dupecheck','Stop the same release from being uploaded twice'],
+    ['find','SITE FIND: search the filesystem and act on results'],
+    ['imdb','Fetch and announce IMDb info for movie releases'],
+    ['jobs','Background jobs that copy or move files between slaves'],
+    ['links','Symlinks for incomplete and recent releases'],
+    ['mediainfo','Read media details from uploaded files'],
+    ['mirror','Keep copies of sections on several slaves'],
+    ['nukefilter','Nuke releases that match filter rules'],
+    ['prebw','Measure and announce bandwidth after a pre'],
+    ['raceleader','Track and announce who leads each race'],
+    ['request','Users request releases, others fill them'],
+    ['sitebot','IRC bot with announces, commands and FiSH'],
+    ['speedtest','Test transfer speed to each slave'],
+    ['speedtest-net','Run speedtest.net checks from slaves'],
+    ['statistics','Per-user and per-group transfer stats'],
+    ['traffic','Watch and limit user traffic'],
+    ['trial','Trial and quota rules for new users'],
+    ['tvmaze','Fetch and announce TVMaze info for shows'],
+    ['zipscript','SFV/CRC and ZIP checks, race progress']
+  ];
+  var g = document.getElementById('plugin-grid');
+  P.forEach(function(p){
+    var d = document.createElement('div'); d.className = 'plug rv';
+    d.innerHTML = '<code>'+p[0]+'</code><p>'+p[1]+'</p>';
+    g.appendChild(d);
+  });
+
+  // tabs + copy
+  var tabs = document.querySelectorAll('.tab'), current = 'build';
+  tabs.forEach(function(t){
+    t.addEventListener('click', function(){
+      tabs.forEach(function(x){ x.setAttribute('aria-selected', x===t); });
+      document.querySelectorAll('.panel').forEach(function(p){ p.classList.remove('on'); });
+      current = t.dataset.t;
+      document.getElementById('p-'+current).classList.add('on');
+    });
+  });
+  var copy = document.getElementById('copy');
+  copy.addEventListener('click', function(){
+    var lines = document.getElementById('p-'+current).innerText.split('\n')
+      .filter(function(l){ return !/^\s*#/.test(l) && !/^ftp>/.test(l); })
+      .map(function(l){ return l.replace(/^\$\s/, '').replace(/\s+#.*$/, ''); })
+      .filter(Boolean).join('\n');
+    var done = function(){ copy.textContent = 'copied ✓'; setTimeout(function(){ copy.textContent = 'copy'; }, 1500); };
+    try { navigator.clipboard.writeText(lines).then(done, function(){}); } catch(e) {}
+  });
+
+  // reveal on scroll
+  var rv = document.querySelectorAll('.rv');
+  if (reduce || !('IntersectionObserver' in window)) { rv.forEach(function(e){ e.classList.add('in'); }); }
+  else {
+    var io = new IntersectionObserver(function(es){
+      es.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
+    }, {rootMargin:'0px 0px -8% 0px'});
+    rv.forEach(function(e, i){ e.style.transitionDelay = (i % 4) * 60 + 'ms'; io.observe(e); });
+  }
+
+  // card glow follows mouse
+  document.querySelectorAll('.card').forEach(function(c){
+    c.addEventListener('mousemove', function(e){
+      var r = c.getBoundingClientRect();
+      c.style.setProperty('--mx', (e.clientX - r.left) + 'px');
+      c.style.setProperty('--my', (e.clientY - r.top) + 'px');
+    });
+  });
+
+  // race bar
+  var race = document.getElementById('race'), bar = document.getElementById('race-bar'), pct = document.getElementById('race-pct');
+  function runRace(){
+    var v = 0; bar.style.width = '0%';
+    var iv = setInterval(function(){
+      v = Math.min(100, v + Math.ceil(Math.random()*7));
+      bar.style.width = v + '%'; pct.textContent = v;
+      if (v >= 100) { clearInterval(iv); setTimeout(runRace, 2600); }
+    }, 180);
+  }
+  if (reduce) { bar.style.width = '100%'; pct.textContent = '100'; }
+  else if ('IntersectionObserver' in window) {
+    var ro = new IntersectionObserver(function(es){ if(es[0].isIntersecting){ runRace(); ro.disconnect(); } });
+    ro.observe(race);
+  } else runRace();
+
+  // terminal
+  var term = document.getElementById('term');
+  var script = [
+    ['in', '> AUTH TLS'],
+    ['ok', '< 234 AUTH TLS successful'],
+    ['in', '> PRET STOR Some.Release-GRP/grp-sr.r00'],
+    ['dim','  master picks the best slave for this file'],
+    ['in', '> PASV'],
+    ['ok', '< 227 Entering Passive Mode (s2 address)'],
+    ['in', '> STOR Some.Release-GRP/grp-sr.r00'],
+    ['ok', '< 226 Transfer complete · CRC ok'],
+    ['amb','  bytes went to s2, master only saw the control line']
+  ];
+  function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function cls(k){ return {in:'t-in',ok:'t-ok',dim:'t-dim',amb:'t-amb'}[k]; }
+  if (reduce) {
+    term.innerHTML = script.map(function(l){ return '<span class="'+cls(l[0])+'">'+esc(l[1])+'</span>'; }).join('\n');
+  } else {
+    var li = 0, ci = 0, html = '';
+    (function tick(){
+      if (li >= script.length) {
+        term.innerHTML = html + '<span class="caret"></span>';
+        setTimeout(function(){ li = 0; ci = 0; html = ''; tick(); }, 3800);
+        return;
+      }
+      var l = script[li], typed = l[0] === 'in';
+      if (typed && ci < l[1].length) {
+        ci++;
+        term.innerHTML = html + '<span class="'+cls(l[0])+'">'+esc(l[1].slice(0, ci))+'</span><span class="caret"></span>';
+        setTimeout(tick, 26 + Math.random()*40);
+      } else {
+        html += '<span class="'+cls(l[0])+'">'+esc(l[1])+'</span>\n';
+        term.innerHTML = html + '<span class="caret"></span>';
+        li++; ci = 0;
+        setTimeout(tick, typed ? 280 : 520);
+      }
+    })();
+  }
+})();
+</script>
 </body>
 </html>
