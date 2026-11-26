@@ -4,7 +4,7 @@
 
 ## Read first
 
-- This wiki, starting with the [FAQ](FAQ.md).
+- This manual, starting with the [FAQ](FAQ.md).
 - The [Installation on Linux](Installation-Linux.md) or [Installation on Windows](Installation-Windows.md) page, and [Adding Slaves](Adding-Slaves.md).
 - Your logs. The master writes to `runtime/master/logs` (`master.log`, `remoteslave.log`, `commands.log`, and per-plugin logs such as `sitebot.log`), the slave to `logs/slave.log` in the slave directory. Log verbosity is explained in [Log Levels](Log-Levels.md).
 

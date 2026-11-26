@@ -1,11 +1,11 @@
 !!! note
     This documentation applies to DrFTPD 4.0.x only.
 
-# DrFTPD 4.x Wiki
+# DrFTPD 4.x Manual
 
 DrFTPD is a distributed FTP daemon written in Java. One **master** handles FTP clients, users, permissions and the virtual file system. Any number of **slaves** store the files and do all the data transfers. A client talks to the master with an ordinary FTP client, and the master tells the slaves what to send or receive. Because the master does not carry file data, you can merge several sites into one: ten 1 Gbit slaves give you 10 Gbit of aggregate bandwidth, although a single transfer never goes above the speed of one slave.
 
-This wiki documents DrFTPD **4.0.x** only. Pages about DrFTPD 2.0 and 3 are kept for history, see [Legacy Pages](Legacy-Pages.md). They do not apply to 4.x.
+This manual documents DrFTPD **4.0.x** only. Pages about DrFTPD 2.0 and 3 are kept on the old wiki for history, see [Legacy Pages](Legacy-Pages.md). They do not apply to 4.x.
 
 ## Start here
 
