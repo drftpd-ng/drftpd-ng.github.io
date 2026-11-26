@@ -1,0 +1,12 @@
+/* Colours matching the DrFTPD landing page: dark background, green and cyan accents */
+[data-md-color-scheme="slate"] {
+  --md-hue: 220;
+  --md-default-bg-color: #06080c;
+  --md-primary-fg-color: #0b0f16;
+  --md-accent-fg-color: #38f2a4;
+  --md-typeset-a-color: #59c8ff;
+}
+[data-md-color-scheme="default"] {
+  --md-primary-fg-color: #0e9f6e;
+  --md-accent-fg-color: #0e9f6e;
+}

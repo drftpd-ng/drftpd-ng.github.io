@@ -1,0 +1,112 @@
+site_name: DrFTPD 4.x Documentation
+site_description: Documentation for DrFTPD 4.0.x, a distributed FTP daemon written in Java
+site_url: https://drftpd-ng.github.io/manual/
+repo_url: https://github.com/drftpd-ng/drftpd
+repo_name: drftpd-ng/drftpd
+copyright: >-
+  <a href="https://github.com/drftpd-ng/drftpd">DrFTPD on GitHub</a> |
+  IRC: <code>#drftpd</code> on EFnet (ircs://irc.efnet.org:6697) |
+  <a href="https://github.com/drftpd-ng/drftpd/issues">Report an issue</a>
+
+theme:
+  name: material
+  font: false
+  features:
+    - navigation.sections
+    - navigation.top
+    - navigation.footer
+    - search.highlight
+    - content.code.copy
+  palette:
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: custom
+      accent: teal
+      toggle:
+        icon: material/weather-night
+        name: Switch to light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: teal
+      accent: teal
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to dark mode
+
+extra_css:
+  - stylesheets/extra.css
+
+plugins:
+  - search
+
+markdown_extensions:
+  - admonition
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.superfences
+  - pymdownx.highlight
+  - pymdownx.inlinehilite
+
+validation:
+  omitted_files: warn
+  absolute_links: warn
+  unrecognized_links: warn
+  anchors: warn
+
+nav:
+  - Home: index.md
+  - "Getting started":
+      - "Introduction": Introduction.md
+      - "Requirements": Requirements.md
+      - "Installation on Linux": Installation-Linux.md
+      - "Installation on Windows": Installation-Windows.md
+      - "Docker": Docker.md
+      - "First Login": First-Login.md
+      - "Adding Slaves": Adding-Slaves.md
+      - "SSL/TLS": SSL-TLS.md
+      - "Firewalls and Passive Mode": Firewalls-and-Passive-Mode.md
+  - "Configuration reference":
+      - "Master Configuration": Master-Configuration.md
+      - "Slave Configuration": Slave-Configuration.md
+      - "Site Commands": Site-Commands.md
+      - "IRC Commands": IRC-Commands.md
+      - "Permissions": Permissions.md
+      - "Users and Groups": Users-and-Groups.md
+      - "Sections": Sections.md
+      - "Log Levels": Log-Levels.md
+  - "Zipscript & IRC":
+      - "Zipscript": Zipscript.md
+      - "Mediainfo": Mediainfo.md
+      - "Sitebot": Sitebot.md
+      - "Themes": Themes.md
+      - "Race Leader": Race-Leader.md
+      - "Links": Links.md
+      - "Dupecheck": Dupecheck.md
+      - "Requests": Requests.md
+      - "IMDB and TVMaze": IMDB-and-TVMaze.md
+  - "Site plugins":
+      - "Plugins": Plugins.md
+      - "Slave Selection": Slave-Selection.md
+      - "Traffic": Traffic.md
+      - "Archive": Archive.md
+      - "Jobs": Jobs.md
+      - "Mirror": Mirror.md
+      - "Autofreespace": Autofreespace.md
+      - "Autonuke": Autonuke.md
+      - "Nukefilter": Nukefilter.md
+      - "Find": Find.md
+      - "Statistics": Statistics.md
+      - "Trial": Trial.md
+      - "PreBW": PreBW.md
+      - "Speedtest": Speedtest.md
+      - "Index and Search": Index-and-Search.md
+  - "Operations":
+      - "Upgrading": Upgrading.md
+      - "Building from Source": Building-from-Source.md
+      - "FAQ": FAQ.md
+      - "Getting Help": Getting-Help.md
+  - "Legacy (2.0 / 3)":
+      - "Legacy Pages": Legacy-Pages.md
+      - "PRET Specifications": https://github.com/drftpd-ng/drftpd/wiki/PRET-Specifications
+      - "Clients with PRET support": https://github.com/drftpd-ng/drftpd/wiki/Clients-with-PRET-support
